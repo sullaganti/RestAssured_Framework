@@ -1,11 +1,6 @@
 # This workflow will build a Java project with Maven, and cache/restore any dependencies to improve the workflow execution time
 # For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-java-with-maven
 
-# This workflow uses actions that are not certified by GitHub.
-# They are provided by a third-party and are governed by
-# separate terms of service, privacy policy, and support
-# documentation.
-
 name: RestAssured CI with Maven
 
 on:
@@ -22,14 +17,13 @@ permissions:
 
 jobs:
   build:
-
     runs-on: windows-latest
 
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v4
 
     - name: Set up JDK 13
-      uses: actions/setup-java@v1
+      uses: actions/setup-java@v4
       with:
         java-version: '13'
         distribution: 'temurin'
@@ -42,6 +36,51 @@ jobs:
       if: always()
       run: mvn allure:report
 
+    - name: Create reports directory structure
+      if: always()
+      run: |
+        $buildId = "${{ github.run_number }}"
+        $commitHash = "${{ github.sha }}".Substring(0,7)
+        
+        # Create main reports directory
+        New-Item -ItemType Directory -Force -Path "./target/site/reports"
+        
+        # Create build-specific directories
+        $allureDir = "./target/site/reports/allure-report-build-$buildId"
+        $extentDir = "./target/site/reports/extent-report-build-$buildId"
+        
+        New-Item -ItemType Directory -Force -Path $allureDir
+        New-Item -ItemType Directory -Force -Path $extentDir
+        
+        # Copy Allure reports
+        if (Test-Path "./target/site/allure-maven-plugin") {
+            Copy-Item -Path "./target/site/allure-maven-plugin/*" -Destination $allureDir -Recurse -Force
+        }
+        
+        # Copy Extent reports (check multiple possible locations)
+        $extentSources = @("./ExtentReports", "./target/ExtentReports", "./reports")
+        foreach ($source in $extentSources) {
+            if (Test-Path $source) {
+                Get-ChildItem -Path $source -Filter "*.html" | ForEach-Object {
+                    Copy-Item -Path $_.FullName -Destination $extentDir -Force
+                }
+            }
+        }
+      shell: powershell
+        
+    - name: Create index page
+      if: always()
+      run: |
+        $buildId = "${{ github.run_number }}"
+        $commitHash = "${{ github.sha }}".Substring(0,7)
+        $timestamp = Get-Date -Format "yyyy-MM-dd HH:mm:ss UTC"
+        
+        # Create simple HTML index
+        $htmlContent = "<!DOCTYPE html><html><head><title>Test Reports - Build $buildId</title></head><body><h1>Test Reports - RestAssured Framework</h1><p><strong>Build:</strong> #$buildId<br><strong>Commit:</strong> $commitHash<br><strong>Generated:</strong> $timestamp</p><h2>Reports</h2><ul><li><a href=`"allure-report-build-$buildId/index.html`">Allure Report</a></li><li><a href=`"extent-report-build-$buildId/`">Extent Report</a></li></ul></body></html>"
+        
+        $htmlContent | Out-File -FilePath "./target/site/reports/index.html" -Encoding UTF8
+      shell: powershell
+
     - name: Setup Pages
       if: always()
       uses: actions/configure-pages@v5
@@ -50,10 +89,9 @@ jobs:
       if: always()
       uses: actions/upload-pages-artifact@v3
       with:
-        path: ./target/site/allure-maven-plugin
+        path: ./target/site/reports
         
     - name: Deploy to GitHub Pages
       if: always()
       id: deployment
       uses: actions/deploy-pages@v4
-
