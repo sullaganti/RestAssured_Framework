@@ -21,17 +21,21 @@ jobs:
 
     steps:
     - uses: actions/checkout@v2
-    - name: Set up JDK 11
+
+    - name: Set up JDK 13
       uses: actions/setup-java@v1
       with:
-        java-version: '11'
+        java-version: '13'
         distribution: 'temurin'
         cache: maven
+
     - name: Build with Maven
       run: mvn clean test -D TestNgXml=PetStore.xml
-  steps:
+
     - name: Generate Allure Report
+      if: always()
       run: mvn allure:report
+
     - name: Deploy Allure Report to GitHub Pages
       uses: peaceiris/actions-gh-pages@v3
       with:
