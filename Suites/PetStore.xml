@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE suite SYSTEM "https://testng.org/testng-1.0.dtd">
+<suite name="K-Fleet MS SQL 2019 API Test Suite">
+    <parameter name="environment" value="PROD"></parameter>
+    <listeners>
+        <listener class-name="listeners.Allure.AllureListener"/>
+        <listener class-name="listeners.Extent.ExtentListener"></listener>
+    </listeners>
+
+    <test name="Positive Tests for PetStore API">
+        <classes>
+
+            <class name="PetStore.StatusCode2xx.PositiveTests">
+            </class>
+        </classes>
+    </test>
+
+    <test name="Negative Tests for PetStore API">
+        <classes>
+            <class name="PetStore.StatusCode4xx.NegativeTests">
+            </class>
+        </classes>
+    </test>
+
+
+
+</suite>
+
