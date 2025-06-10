@@ -23,7 +23,7 @@ public class ExtentReporterCls {
             dir.mkdirs();
         }
         
-        String path = reportDir + "\\ExtentReport_" + ReportFolderName + ".html";
+        String path = reportDir + "\\ExtentReport.html";
 
         ExtentSparkReporter ESR = new ExtentSparkReporter(path).viewConfigurer()
                 .viewOrder()

@@ -76,7 +76,7 @@ jobs:
         $timestamp = Get-Date -Format "yyyy-MM-dd HH:mm:ss UTC"
         
         # Create simple HTML index
-        $htmlContent = "<!DOCTYPE html><html><head><title>Test Reports - Build $buildId</title></head><body><h1>Test Reports - RestAssured Framework</h1><p><strong>Build:</strong> #$buildId<br><strong>Commit:</strong> $commitHash<br><strong>Generated:</strong> $timestamp</p><h2>Reports</h2><ul><li><a href=`"allure-report-build-$buildId/index.html`">Allure Report</a></li><li><a href=`"extent-report-build-$buildId/`">Extent Report</a></li></ul></body></html>"
+        $htmlContent = "<!DOCTYPE html><html><head><title>Test Reports - Build $buildId</title></head><body><h1>Test Reports - RestAssured Framework</h1><p><strong>Build:</strong> #$buildId<br><strong>Commit:</strong> $commitHash<br><strong>Generated:</strong> $timestamp</p><h2>Reports</h2><ul><li><a href=`"allure-report-build-$buildId/index.html`">Allure Report</a></li><li><a href=`"extent-report-build-$buildId/ExtentReport.html`">Extent Report</a></li></ul></body></html>"
         
         $htmlContent | Out-File -FilePath "./target/site/reports/index.html" -Encoding UTF8
       shell: powershell
