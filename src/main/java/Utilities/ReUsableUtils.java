@@ -1,7 +1,6 @@
 package Utilities;
 
 import base.BaseClass;
-import com.epam.reportportal.annotations.Step;
 import io.qameta.allure.Allure;
 import io.restassured.path.json.JsonPath;
 import lombok.SneakyThrows;
@@ -9,7 +8,6 @@ import org.assertj.core.api.AbstractAssert;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
-import org.openqa.selenium.WebElement;
 
 import java.io.FileReader;
 import java.io.IOException;
