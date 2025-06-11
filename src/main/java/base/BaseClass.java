@@ -22,6 +22,10 @@ public class BaseClass {
 	@SneakyThrows
 	public void initEnvironmentProperties(String envFromTestNG) {
 		env=envFromTestNG;
+		if((env== null || env.isEmpty()) && System.getProperty("environment") != null) {
+			env = System.getProperty("environment");
+			// env="PROD";
+		}
 		String propFilesLocation = "\\src\\main\\resources\\environment\\";
 		File propertiesFile = new File(System.getProperty("user.dir") + propFilesLocation + envFromTestNG + ".properties");
 		ConfigFactory.setProperty("file", String.valueOf(propertiesFile.toURI()));
