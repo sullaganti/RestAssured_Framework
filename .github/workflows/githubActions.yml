@@ -30,164 +30,56 @@ jobs:
         cache: maven
 
     - name: Build with Maven
-      run: mvn clean test -D TestNgXml=PetStore.xml    - name: Generate Allure Report
+      run: mvn clean test -D TestNgXml=PetStore.xml
+
+    - name: Generate Allure Report
       if: always()
       run: mvn allure:report
-      
+
     - name: Create reports directory structure
       if: always()
-      shell: bash
       run: |
-        BUILD_ID="${{ github.run_number }}"
-        COMMIT_HASH="${{ github.sha }}"
-        COMMIT_SHORT="${COMMIT_HASH:0:7}"
+        $buildId = "${{ github.run_number }}"
+        $commitHash = "${{ github.sha }}".Substring(0,7)
         
-        # Create directory structure
-        mkdir -p "./target/site/reports/allure-report-build-${BUILD_ID}"
-        mkdir -p "./target/site/reports/extent-report-build-${BUILD_ID}"
+        # Create main reports directory
+        New-Item -ItemType Directory -Force -Path "./target/site/reports"
+        
+        # Create build-specific directories
+        $allureDir = "./target/site/reports/allure-report-build-$buildId"
+        $extentDir = "./target/site/reports/extent-report-build-$buildId"
+        
+        New-Item -ItemType Directory -Force -Path $allureDir
+        New-Item -ItemType Directory -Force -Path $extentDir
         
         # Copy Allure reports
-        if [ -d "./target/site/allure-maven-plugin" ]; then
-          cp -r "./target/site/allure-maven-plugin/"* "./target/site/reports/allure-report-build-${BUILD_ID}/"
-        fi
+        if (Test-Path "./target/site/allure-maven-plugin") {
+            Copy-Item -Path "./target/site/allure-maven-plugin/*" -Destination $allureDir -Recurse -Force
+        }
         
-        # Copy Extent reports
-        for dir in "./ExtentReports" "./target/ExtentReports" "./reports"; do
-          if [ -d "$dir" ]; then
-            cp "$dir"/*.html "./target/site/reports/extent-report-build-${BUILD_ID}/" 2>/dev/null || true
-          fi
-        done
+        # Copy Extent reports (check multiple possible locations)
+        $extentSources = @("./ExtentReports", "./target/ExtentReports", "./reports")
+        foreach ($source in $extentSources) {
+            if (Test-Path $source) {
+                Get-ChildItem -Path $source -Filter "*.html" | ForEach-Object {
+                    Copy-Item -Path $_.FullName -Destination $extentDir -Force
+                }
+            }
+        }
+      shell: powershell
         
     - name: Create index page
       if: always()
-      shell: bash
       run: |
-        BUILD_ID="${{ github.run_number }}"
-        COMMIT_HASH="${{ github.sha }}"
-        COMMIT_SHORT="${COMMIT_HASH:0:7}"
-        TIMESTAMP="$(date '+%Y-%m-%d %H:%M:%S UTC')"
+        $buildId = "${{ github.run_number }}"
+        $commitHash = "${{ github.sha }}".Substring(0,7)
+        $timestamp = Get-Date -Format "yyyy-MM-dd HH:mm:ss UTC"
         
-        cat > "./target/site/reports/index.html" << 'EOL'
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width,initial-scale=1">
-    <title>Test Reports - Build ${BUILD_ID}</title>
-    <style>
-        :root {
-            --primary: #0366d6;
-            --bg: #ffffff;
-            --text: #24292e;
-            --hover: #f6f8fa;
-            --border: #e1e4e8;
-        }
-        @media (prefers-color-scheme: dark) {
-            :root {
-                --primary: #58a6ff;
-                --bg: #0d1117;
-                --text: #c9d1d9;
-                --hover: #161b22;
-                --border: #30363d;
-            }
-        }
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body {
-            font-family: -apple-system, system-ui, "Segoe UI", sans-serif;
-            line-height: 1.6;
-            background: var(--bg);
-            color: var(--text);
-            padding: 2rem;
-        }
-        .container {
-            max-width: 800px;
-            margin: 0 auto;
-        }
-        h1 {
-            color: var(--primary);
-            margin-bottom: 1.5rem;
-            font-size: 2.5rem;
-        }
-        .info-card {
-            background: var(--hover);
-            border: 1px solid var(--border);
-            padding: 1.5rem;
-            border-radius: 8px;
-            margin-bottom: 2rem;
-        }
-        .info-card p {
-            margin: 0.5rem 0;
-            color: var(--text);
-        }
-        .grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            gap: 1.5rem;
-        }
-        .card {
-            background: var(--bg);
-            border: 1px solid var(--border);
-            padding: 1.5rem;
-            border-radius: 8px;
-            transition: all 0.2s ease;
-        }
-        .card:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-        }
-        .card a {
-            color: var(--primary);
-            text-decoration: none;
-            font-size: 1.1rem;
-            font-weight: 600;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-        .card a:hover {
-            text-decoration: underline;
-        }
-        .emoji {
-            font-size: 1.5rem;
-            margin-right: 0.5rem;
-        }
-        @media (max-width: 600px) {
-            body { padding: 1rem; }
-            .grid { grid-template-columns: 1fr; }
-        }
-    </style>
-</head>
-<body>
-    <div class="container">
-        <h1>🚀 Rest Assured Test Reports</h1>
-        <div class="info-card">
-            <p><strong>Build:</strong> #${BUILD_ID}</p>
-            <p><strong>Commit:</strong> ${COMMIT_SHORT}</p>
-            <p><strong>Generated:</strong> ${TIMESTAMP}</p>
-        </div>
-        <div class="grid">
-            <div class="card">
-                <a href="allure-report-build-${BUILD_ID}/index.html">
-                    <span class="emoji">📊</span>
-                    View Allure Report
-                </a>
-            </div>
-            <div class="card">
-                <a href="extent-report-build-${BUILD_ID}/">
-                    <span class="emoji">📈</span>
-                    View Extent Report
-                </a>
-            </div>
-        </div>
-    </div>
-</body>
-</html>
-EOL
-
-        # Replace variables in the template
-        sed -i "s/\${BUILD_ID}/$BUILD_ID/g" "./target/site/reports/index.html"
-        sed -i "s/\${COMMIT_SHORT}/$COMMIT_SHORT/g" "./target/site/reports/index.html"
-        sed -i "s/\${TIMESTAMP}/$TIMESTAMP/g" "./target/site/reports/index.html"
+        # Create simple HTML index
+        $htmlContent = "<!DOCTYPE html><html><head><title>Test Reports - Build $buildId</title></head><body><h1>Test Reports - RestAssured Framework</h1><p><strong>Build:</strong> #$buildId<br><strong>Commit:</strong> $commitHash<br><strong>Generated:</strong> $timestamp</p><h2>Reports</h2><ul><li><a href=`"allure-report-build-$buildId/index.html`">Allure Report</a></li><li><a href=`"extent-report-build-$buildId/`">Extent Report</a></li></ul></body></html>"
+        
+        $htmlContent | Out-File -FilePath "./target/site/reports/index.html" -Encoding UTF8
+      shell: powershell
 
     - name: Setup Pages
       if: always()
