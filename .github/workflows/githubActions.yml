@@ -118,11 +118,14 @@ jobs:
             </div>
         </body>
         </html>
-'@ -f $buildId, $commitHash, $timestamp
+# '@
         
-        # Ensure the directory exists and write the content
-        New-Item -ItemType Directory -Force -Path "./target/site/reports"
-        Set-Content -Path "./target/site/reports/index.html" -Value $htmlContent -Encoding UTF8
+#         # Format the HTML content with the variables
+#         $htmlContent = $htmlContent -f $buildId, $commitHash, $timestamp
+        
+#         # Ensure the directory exists and write the content
+#         New-Item -ItemType Directory -Force -Path "./target/site/reports"
+#         Set-Content -Path "./target/site/reports/index.html" -Value $htmlContent -Encoding UTF8
 
     - name: Setup Pages
       if: always()
